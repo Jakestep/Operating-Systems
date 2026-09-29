@@ -25,7 +25,11 @@ int main(int argc, char *argv[]) {
      * Dynamically allocate memory of size ROWS_COUNT x COLUMN_COUNT x size_of(int).
      * run "man malloc" on ubuntu/linux terminal or see online help about malloc function
      */
-    
+    int *matrix = (int *)malloc(ROWS_COUNT * COLUMN_COUNT * sizeof(int));
+    if (matrix == NULL) {
+        printf("Memory allocation failed\n");
+        return 1;
+    }
     
 
     /* ToDo 2:
@@ -34,26 +38,44 @@ int main(int argc, char *argv[]) {
      * Value of each element is set to i+j, where i is index of row
      * and j is index of column.
     */
+    for (int i = 0; i < ROWS_COUNT; i++) {
+        for (int j = 0; j < COLUMN_COUNT; j++) {
+            matrix[i * COLUMN_COUNT + j] = i + j;
+        }
+    }
 
     
-
-
     int row_per_process=ROWS_COUNT/num_processes;
     int start_row=0;
     int end_row=start_row+row_per_process-1;
 
     clock_gettime(CLOCK_REALTIME, &start);
 
-    /*
-    ToDo 3: Create num_processes count of children processes. (using fork)
-    ToDo 4: Ask each child process to print "row_per_process" number of rows by calling function print_matrix_rows(). See header file.
-    ToDo 5: Each child process MUST free the dynamically allocated memory for matrix from its own adress space after printing the designated rows.
-    ToDo 6: All children processes MUST exit after freeing dyamically allocated memory of matrix.
-    */
+  
     
+    for (int p = 0; p < num_processes; p++) {
+        if (p == num_processes - 1) end_row = ROWS_COUNT - 1; // Adjust the end_row for the last process to include any remaining rows
+        pid_t pid = fork(); // ToDo 3: Create num_processes count of children processes. (using fork)  
+        if (pid < 0) {
+            perror("Fork failed");
+            free(matrix);
+            return 1;
+        }
 
-    /*ToDO 7: Parent process must wait for all children processes to complete*/
-    
+        if (pid == 0) { // Child process
+            print_matrix_rows(matrix, start_row, end_row); // ToDo 4: Ask each child process to print "row_per_process" number of rows by calling function print_matrix_rows(). See header file.
+            free(matrix); // Free dynamically allocated memory in child process TODO 5
+            exit(0); // Exit child process after printing and freeing memory TODO 6
+        } else { // Parent process
+            start_row += row_per_process;
+            end_row += row_per_process;
+        }
+    }
+
+    // ToDO 7: Parent process must wait for all children processes to complete
+    for (int p = 0; p < num_processes; p++) {
+        wait(NULL);
+    }
 
     printf("all child processes completed their execution\n");
 
