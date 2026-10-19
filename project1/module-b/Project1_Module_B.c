@@ -69,12 +69,23 @@ int main(int argc, char *argv[]) {
      *
     */
 
+    // for (i = 0; i < num_processes; i++) {
+
+    //     pid_t pid = fork();
+
+    //     if (pid == 0) { // child process
+    //     }
+
+    // }
+
 
 
     /* ToDo5
      * Wait for all children processes to complete
     */
-
+    for (int i = 0; i < num_processes; i++) {
+        wait(NULL); // wait for each child process to complete
+    }
 
 
     /* ToDo6:

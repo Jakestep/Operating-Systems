@@ -39,6 +39,15 @@ long sum_matrix(int start_row, int end_row, int *matrix)
      * write the code for summing all elements from start_row to end_row
     */
 
+    for (int i = start_row; i <= end_row; i++) { // loop through each row from start_row to end_row
+        for (int j = 0; j < COLUMN_COUNT; j++) { // loop through each column in the current row until COLUMN_COUNT
+            
+            sum += *(matrix + i * COLUMN_COUNT + j); // add the value of the current element to the sum. treats the matrix as a 1D array starting from the address of the passed matrix pointer.
+       
+        }
+
+    }
+
     return sum;
 }
 
