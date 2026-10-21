@@ -12,38 +12,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-
     struct timespec start, end;
     long long seconds, nano_seconds;
 
-    /* ToDo1
-     * Create and attach shared memory region 1 to store the matrix
-     * 
-     * Hint: Google shmget() and shmat()
-     */
     int shmatrix = shmget(IPC_PRIVATE, ROWS_COUNT * COLUMN_COUNT * sizeof(int), IPC_CREAT | 0666);  // create a shared memory segment for the matrix
     int (*matrix)[COLUMN_COUNT] = (int (*)[COLUMN_COUNT])shmat(shmatrix, NULL, 0);  // attach the shared memory segment to the address space
 
-
-
-
-    /* ToDo2
-     * create and attach shared memory region 2 to store the partial sums that
-     * are returned by children processes.
-     */
-    int partial_sums_shm = shmget(IPC_PRIVATE, num_processes * sizeof(int), IPC_CREAT | 0666);  // create a shared memory segment for the partial sums
-    int *partial_sums = (int *)shmat(partial_sums_shm, NULL, 0);  // attach the shared memory segment to the address space
-
-
-    /* ToDo3
-     * Initialize the shared memory region 1 to hold
-     * the matrix of size ROW_COUNT x COLUMN_COUNT.
-     * Value of each element is set to i+j, where i is index of row
-     * and j is index of column.
-     * 
-     * Hint: Treat starting address of shared memory region as first
-     * elemnt of a 2D matrix i.e.,  matrix[0][0]
-    */
+    int partial_sums_shm = shmget(IPC_PRIVATE, num_processes * sizeof(long), IPC_CREAT | 0666);  // create a shared memory segment for the partial sums
+    long *partial_sums = (long *)shmat(partial_sums_shm, NULL, 0);  // attach the shared memory segment to the address space
 
     // initialize each element of the matrix to the sum of its row and column indices
     for (int i = 0; i < ROWS_COUNT; i++) {
@@ -54,45 +30,57 @@ int main(int argc, char *argv[]) {
 
     clock_gettime(CLOCK_REALTIME, &start);
 
+    int childRows = ROWS_COUNT / num_processes; // num of rows each child process will handle
+    int remainingRows = ROWS_COUNT % num_processes; // calculate any remaining rows that need to be distributed
+    int startRow = 0; // initialize the starting row; used to keep track of what row each child process should start with
 
-    /* ToDo4:
-     * 1) Create num_processes count of children processes. (using fork). Note that each child process runs a new binary 
-     * (i.e., binary of child_proc.c) using execlp()
-     * 2) Specify for each process the start_row, end_row, and
-     * index in shared memory region 2 where a child process is supposed to store its
-     * calculated partial sum.
-     *
-     *
-     * Hints:
-     *
-     * Google "man fork" and "man execlp"
-     *
-    */
-
-    // for (i = 0; i < num_processes; i++) {
-
-    //     pid_t pid = fork();
-
-    //     if (pid == 0) { // child process
-    //     }
-
-    // }
-
-
-
-    /* ToDo5
-     * Wait for all children processes to complete
-    */
     for (int i = 0; i < num_processes; i++) {
-        wait(NULL); // wait for each child process to complete
+
+        int numRows = childRows; // the number of rows this child process will handle
+
+        if (i == num_processes - 1) { // if this is the last child process assign the remaining rows to it
+            numRows += remainingRows;
+        }
+
+        int currStart = startRow; // store the current starting row for this child process
+        int currEnd = currStart + numRows - 1; // calculate the ending row for this child process
+        startRow = currEnd + 1; // update the starting row for the next child process
+
+        pid_t pid = fork();
+
+        if (pid == 0) { // child process
+
+            char matrix_id[32], start_row[32], num_rows[32], partial_sum_index[32], partialsum_location[32]; // char arrays to hold matrix id, start row, # of rows, partial sum index, and memory location of the shared memory segment
+
+            // convert the integer values to strings so we can pass them as arguments using execlp
+            sprintf(matrix_id, "%d", shmatrix); // convert the shared memory id for the matrix to a string
+            sprintf(start_row, "%d", currStart); // convert the starting row for this child process to a string
+            sprintf(num_rows, "%d", numRows); // convert the number of rows for this child process to a string
+            sprintf(partial_sum_index, "%d", i); // convert the index for the partial sum in shared memory to a string
+            sprintf(partialsum_location, "%d", partial_sums_shm); // convert the shared memory id for the partial sums to a string
+
+            execlp("./child", "child", start_row, num_rows, matrix_id, partialsum_location, partial_sum_index, (char *)NULL); // execute child_proc with the appropriate arguments
+            perror("execlp failed"); // if execlp fails, print an error message
+            exit(1); // exit with an error code
+
+        } else if (pid < 0) { // fork failed
+            perror("Fork failed");
+            exit(1);
+        }
     }
 
+    // Wait for all child processes to complete
+    for (int i = 0; i < num_processes; i++) {
+        wait(NULL);
+    }
 
-    /* ToDo6:
-     * Sum all the partial-sums stored in sharred memory region 2 (by children processes)
-     * and print the sum.
-    */
+    long totalSum = 0; // variable to hold the total sum of the matrix
 
+    for (int i = 0; i < num_processes; i++) {
+        totalSum += partial_sums[i]; // add the partial sum from each child process to the total sum
+    }
+
+    printf("Total sum of the matrix: %ld\n", totalSum); // print the total sum of the matrix
 
     clock_gettime(CLOCK_REALTIME, &end);
     // Calculate execution time
@@ -101,15 +89,11 @@ int main(int argc, char *argv[]) {
     long double executio_time=(long double)seconds+((long double)nano_seconds/1000000000);
     printf("Execution Time with %d process(es): %Lf\n",num_processes,executio_time);
 
+    shmdt(matrix); // detach the shared memory segment for the matrix
+    shmdt(partial_sums); // detach the shared memory segment for the partial sums
 
-    /* ToDo7:
-     * Detach and destroy both shared memory regions.
-     * Hint:
-     * Google "man shmdt" and "man shmctl"
-    */
-
-
-
+    shmctl(shmatrix, IPC_RMID, NULL); // destroy the shared memory segment for the matrix
+    shmctl(partial_sums_shm, IPC_RMID, NULL); // destroy the shared memory segment for the partial sums
 
     return 0;
 }

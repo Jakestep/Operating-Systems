@@ -35,10 +35,7 @@ long sum_matrix(int start_row, int end_row, int *matrix)
 {
     long sum=0;
 
-    /* ToDo1:
-     * write the code for summing all elements from start_row to end_row
-    */
-
+    // sum all elements of the matrix from start_row to end_row
     for (int i = start_row; i <= end_row; i++) { // loop through each row from start_row to end_row
         for (int j = 0; j < COLUMN_COUNT; j++) { // loop through each column in the current row until COLUMN_COUNT
             
