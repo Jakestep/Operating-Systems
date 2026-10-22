@@ -1,3 +1,8 @@
+/**
+ * Jacob Estep -- 800818397
+ * Austin Voight-Malone -- 800878160
+ */
+
 #include "Project1_Module_B.h"
 
 int main(int argc, char *argv[]) {
