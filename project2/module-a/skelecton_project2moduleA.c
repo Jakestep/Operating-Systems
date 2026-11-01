@@ -68,43 +68,56 @@ int main(int argc, char *argv[]) {
     ToDo 5: read all the content of input image file into allocated memory.
     Hint: Google "man fread(3p)"
     */
+    return_val = fread(image, sizeof(unsigned char), width * height, Fin);
 
 
     /*ToDo 6: Do error checking to make sure that fread was sucessfull. If not, exit the program.
     Hoever, free the dynamically allocated memory before exiting.
     */
+    if (return_val != width * height) {
+        perror("Error reading input file");
+        free(image);
+        fclose(Fin);
+        return 1;
+    }
 
 
     //ToDo 7: close the input file
+    fclose(Fin);
     
 
     /*
     ToDo 8: Iterate over all bytes of the dynmaically allocated memory (where each byte stores one pixel of the input file) 
     and update its avlue by doing following operation.
-
-    if (value of the byte is greater than or equal to threshold)
-        {
-        set value of the byte to 255.
-        }
-    else
-        {
-        set value of the byte to 0.
-        }
     */
-
-
+    for (int i = 0; i < width * height; i++)
+    {
+        if (image[i] >= threshold)
+            {
+            image[i] = 255; // set value of the byte to 255.
+            }
+        else
+            {
+            image[i] = 0; // set value of the byte to 0.
+            }
+    }
+    
     /*
     ToDo 9: open the ouput file with "w+" permission
     Hint: google "man fopen"
     */
-
+    FILE *Fout = fopen(output_file, "w+");
 
     /*
     ToDo 10: Do error checking to make sure that output file is opened sucessfully. If not, exit the program.
     However, free the dynamically allocated memory before exiting.
     */
+    if (Fout == NULL) {
+        perror("Error opening output file");
+        free(image);
+        return 1;
+    }
     
-
     //======================Write header of the output file====================
     fprintf(Fout, "P5\n%d %d\n255\n", width, height);
     //===============Done writing header of the output file====================
@@ -113,23 +126,29 @@ int main(int argc, char *argv[]) {
     ToDo 11: Write output file with the content of dynamically allocated memory
     Hint: google "man fwrite(3p)"
     */
+    return_val = fwrite(image, sizeof(unsigned char), width * height, Fout);
     
 
     /*
     ToDo 12: Do error checking to make sure that all bytes from allocated memory are written successfully to the output image file.
     If not, free the dynmaically allocated memory and exit the program.
     */
+    if (return_val != width * height) {
+        perror("Error writing to output file");
+        free(image);
+        fclose(Fout);
+        return 1;
+    }
     
     /*
     ToDo 13: Close output file.
     */
+    fclose(Fout);
    
-    
     /*
     ToDo 14: Free the memory that was allocated to store black and white image.
     Hint: Google "man free". 
     */
-
-
+    free(image);
     return 0;
 }

@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -O2
-TARGET = skelecton_project2moduleA.c
+TARGET = skelecton_project2moduleA
 SRC = skelecton_project2moduleA.c
 
 all: $(TARGET)
