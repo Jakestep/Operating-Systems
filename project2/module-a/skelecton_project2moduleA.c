@@ -1,3 +1,9 @@
+/**
+ * Jacob Estep -- 800818397
+ * Austin Voight-Malone -- 800878160
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
