@@ -18,10 +18,15 @@ int main(int argc, char *argv[]) {
     ToDO 1: Open input file in read-only binary mode i.e. "rb"
     Hint: google "man fopen()"
     */
+    FILE *Fin = fopen(input_file, "rb");
 
     /*
     ToDo 2: Do error checking to ensure file was opened sucessfully before proceeding
     */
+    if (Fin == NULL) {
+        perror("Error opening input file");
+        return 1;
+    }
 
     //======================Reading File Header=====================================
     //read the first line just to advance the cursor in file but dont use the line.
@@ -46,14 +51,18 @@ int main(int argc, char *argv[]) {
     ToDo 3: Allocate memory to store width x height number of pixels for black and white image. 
     Note that each pixel has max value of 255, so an 8-bit char is sufficent to store the pixel value.
     Hint: google "man malloc";
-    */
-    
+    */ 
+    unsigned char *image = (unsigned char *)malloc(width * height * sizeof(unsigned char)); // allocate memory for the image; unsigned char allows for pixel values from 0 to 255
 
     /*
     ToDo 4: Do Error checking to make sure memory was successfully allocated before proceeding.
     In case of failure, exit the program.
     */
-
+    if (image == NULL) {
+        perror("Error allocating memory for image");
+        fclose(Fin);
+        return 1;
+    }
 
     /*
     ToDo 5: read all the content of input image file into allocated memory.
